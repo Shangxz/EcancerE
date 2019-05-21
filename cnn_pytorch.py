@@ -276,16 +276,16 @@ def main():
         my_test_dataset = MyDataset(test_data, test_labels, -1)
     
     elif sys.argv[1] == "resnet18":
-        batch_size = 100
+        batch_size = 64
         num_epoch = 100
         model = models.resnet50(pretrained=True).to(device)
-        # model = models.resnet18(pretrained=False).to(device)
+        # model = models.resnet50(pretrained=False).to(device)
         # feature extraction, disable to finetune whole model
-        for name, param in model.named_parameters():
+        # for name, param in model.named_parameters():
             # if ("layer4" not in name):
                 # if ("layer3" not in name):
                     # if ("layer2" not in name):
-            param.requires_grad = False
+            # param.requires_grad = False
             # print(name)
 
         num_ftrs = model.fc.in_features
@@ -314,8 +314,8 @@ def main():
 
         criterion = nn.CrossEntropyLoss()
         # optimizer = torch.optim.SGD(params_to_update, lr = 0.003, momentum= 0.9)
-        optimizer = optim.Adam(params_to_update, lr=0.0001)
-        # optimizer = optim.Adam(model.parameters(), lr=0.001)
+        optimizer = optim.Adam(params_to_update, lr=0.001)
+        # optimizer = optim.Adam(model.parameters(), lr=0.0001)
 
         trainloader = torch.utils.data.DataLoader(my_train_dataset, batch_size=batch_size,
                                               shuffle=True)
