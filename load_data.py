@@ -100,14 +100,6 @@ def load_data():
 	train_data, train_labels = augment_and_store(train_data, train_labels)
 	train_data = normalize_images(train_data)
 	test_data = normalize_images(test_data)
-	
-	# for x in range(3):
-	# 	cv2.imshow('d', train_data[x])
-	# 	cv2.waitKey(0)
-	# 	cv2.destroyAllWindows()
-	# 	cv2.imshow('d', test_data[x])
-	# 	cv2.waitKey(0)
-	# 	cv2.destroyAllWindows()
 
 	#load unknown data
 	unknown_data = []
