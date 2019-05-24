@@ -87,6 +87,8 @@ def demo_test(testloader, raw_data, net, device):
             print(images.shape)
 
             outputs = net(images)
+            outputs = torch.nn.functional.softmax(outputs, dim=1)
+            print(outputs)
             _, predicted = torch.max(outputs.data, 1)
             print(outputs)
 
@@ -122,9 +124,9 @@ def main():
 
     #loading the 90% accurate one
     if torch.cuda.is_available():
-        model.load_state_dict(torch.load('checkpoints/90'))
+        model.load_state_dict(torch.load('checkpoints/90_48100'))
     else:
-        model = torch.load('checkpoints/90', map_location='cpu')
+        model = torch.load('checkpoints/90_48100', map_location='cpu')
 
     my_unknown_dataset = MyDataset(unknown_data, unknown_labels, 224, raw_unknown_data)
     unknownloader = torch.utils.data.DataLoader(my_unknown_dataset, batch_size=5,
