@@ -274,8 +274,8 @@ def main():
         my_test_dataset = MyDataset(test_data, test_labels, -1)
     
     elif sys.argv[1] == "resnet18":
-        batch_size = 64
-        num_epoch = 100
+        batch_size = 80
+        num_epoch = 10000
         model = models.resnet50(pretrained=True).to(device)
         # model = models.resnet50(pretrained=False).to(device)
         # feature extraction, disable to finetune whole model
@@ -287,18 +287,22 @@ def main():
             # print(name)
 
         num_ftrs = model.fc.in_features
-        model.fc = nn.Linear(num_ftrs, 2).to(device)
+        # model.fc = nn.Linear(num_ftrs, 2).to(device)
+        model.fc = nn.Sequential(
+                nn.Dropout(0.1),
+                nn.Linear(num_ftrs, 2)
+            ).to(device)
 
-        params_to_update = []
+        # params_to_update = []
 
-        for name, param in model.named_parameters():
-            if param.requires_grad == True:
-                params_to_update.append(param)
-                print("\t",name)
+        # for name, param in model.named_parameters():
+        #     if param.requires_grad == True:
+        #         params_to_update.append(param)
+        #         print("\t",name)
 
-        my_train_dataset = MyDataset(train_data, train_labels, 224)
-        my_test_dataset = MyDataset(test_data, test_labels, 224)
-        my_unknown_dataset = MyDataset(unknown_data, unknown_labels, 224)
+        my_train_dataset = MyDataset(train_data, train_labels, -1)
+        my_test_dataset = MyDataset(test_data, test_labels, -1)
+        my_unknown_dataset = MyDataset(unknown_data, unknown_labels, -1)
 
         # aug = transforms.Compose([
         #     transforms.RandomHorizontalFlip(p=1),
@@ -312,8 +316,8 @@ def main():
 
         criterion = nn.CrossEntropyLoss()
         # optimizer = torch.optim.SGD(params_to_update, lr = 0.003, momentum= 0.9)
-        optimizer = optim.Adam(params_to_update, lr=0.001)
-        # optimizer = optim.Adam(model.parameters(), lr=0.0001)
+        # optimizer = optim.Adam(params_to_update, lr=0.0003)
+        optimizer = optim.Adam(model.parameters(), lr=0.0000001)
 
         trainloader = torch.utils.data.DataLoader(my_train_dataset, batch_size=batch_size,
                                               shuffle=True)

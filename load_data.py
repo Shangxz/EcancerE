@@ -13,7 +13,15 @@ def augment_and_store(data, labels):
 		# cv2.imshow('augment_and_store', eye)
 		# cv2.waitKey(0)
 		# cv2.destroyAllWindows()
-		new_data.append(cv2.resize(eye[int(eye.shape[0]/10):int(-1 * eye.shape[0]/10), int(eye.shape[1]/10):int(-1 * eye.shape[1]/10)], (100,48)))
+		new_data.append(cv2.resize(eye[int(eye.shape[0]/10):int(-1 * eye.shape[0]/10), int(eye.shape[1]/10):int(-1 * eye.shape[1]/10)], (224,224)))
+		# new_data.append(cv2.resize(eye[int(eye.shape[0]/10):int(-1 * eye.shape[0]/10), int(eye.shape[1]/10):int(-1 * eye.shape[1]/10)], (100,48)))
+		# temp = cv2.resize(eye[int(eye.shape[0]/10):int(-1 * eye.shape[0]/10), int(eye.shape[1]/10):int(-1 * eye.shape[1]/10)], (224,224))
+		
+		# cv2.namedWindow('augment_and_store', cv2.WINDOW_NORMAL)
+		# cv2.imshow('augment_and_store', temp)
+		# cv2.waitKey(0)
+		# cv2.destroyAllWindows()
+
 		new_labels.append(label)
 		new_data.append(eye)
 		new_labels.append(label)
@@ -42,7 +50,8 @@ def load_image(folder, image_path, label, data, labels):
 	for child in root:
 		if child.tag == 'object':
 			bbox = [int(child[-1][0].text), int(child[-1][1].text), int(child[-1][2].text), int(child[-1][3].text)]
-			data.append(cv2.resize(image[bbox[1]:bbox[3], bbox[0]:bbox[2]], (100, 48)))
+			data.append(cv2.resize(image[bbox[1]:bbox[3], bbox[0]:bbox[2]], (224, 224)))
+			# data.append(cv2.resize(image[bbox[1]:bbox[3], bbox[0]:bbox[2]], (100, 48)))
 			labels.append(label)
 
 
@@ -91,14 +100,6 @@ def load_data():
 	train_data, train_labels = augment_and_store(train_data, train_labels)
 	train_data = normalize_images(train_data)
 	test_data = normalize_images(test_data)
-	
-	# for x in range(3):
-	# 	cv2.imshow('d', train_data[x])
-	# 	cv2.waitKey(0)
-	# 	cv2.destroyAllWindows()
-	# 	cv2.imshow('d', test_data[x])
-	# 	cv2.waitKey(0)
-	# 	cv2.destroyAllWindows()
 
 	#load unknown data
 	unknown_data = []
