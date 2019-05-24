@@ -1,2 +1,32 @@
 python3 -m pip install numpy -I
 
+in vscode -> preference -> search EOL -> change from auto to CRLF \r\n
+
+*** create virtualenv with conda ***
+conda env create -f environment.yaml python=3.7.3
+*** enable virtualenv ***
+conda activate eyevenv
+
+
+
+
+*** (Donot use below code install, this is for documentation) ***
+****
+Use anaconda and python3.7 from anaconda dist
+****
+conda create -n eyevenv python=3.7.3 -f environment.yml
+conda activate eyevenv
+*** or (not recommanded to put virtual env in root dir) ***
+conda create -p ./venv python=3.7.3 anaconda
+activate C:\Users\mingy\Documents\GitHub\EcancerE\venv
+*** install Cuda from nvidia ***
+*** (Donot use this install, this is for documentation) ***
+conda install pytorch torchvision cudatoolkit=10.0 -c pytorch
+conda install spacy
+conda install pandas
+conda install opencv
+conda install matplotlib
+*** export env to file (Donot use this install, this is for documentation)***
+conda env export > environment.yaml
+
+
