@@ -71,16 +71,40 @@ class MyDataset(data.Dataset):
         return target, labels, raw
 
 def load_image(folder, image_path, label, data, labels):
-	xml_path = folder + 'annotations/' + image_path.split('.')[0] + '.xml'
-	if not os.path.exists(xml_path):
-		return
-	image = cv2.imread(folder + image_path)
-	root = ET.parse(xml_path).getroot()
-	for child in root:
-		if child.tag == 'object':
-			bbox = [int(child[-1][0].text), int(child[-1][1].text), int(child[-1][2].text), int(child[-1][3].text)]
-			data.append(cv2.resize(image[bbox[1]:bbox[3], bbox[0]:bbox[2]], IMAGE_SIZE))
-			labels.append(label)
+    xml_path = folder + 'annotations/' + image_path.split('.')[0] + '.xml'
+    if not os.path.exists(xml_path):
+        return
+    image = cv2.imread(folder + image_path)
+    root = ET.parse(xml_path).getroot()
+    for child in root:
+        if child.tag == 'object':
+            bbox = [int(child[-1][0].text), int(child[-1][1].text), int(child[-1][2].text), int(child[-1][3].text)]
+            data.append(cv2.resize(image[bbox[1]:bbox[3], bbox[0]:bbox[2]], IMAGE_SIZE))
+            labels.append(label)
+
+def create_train_data(data0, data1, label0, label1):
+    print("Augmenting and Balancing Dataset")
+
+    data0_data = []
+    for val in data0:
+        val_pil = torchvision.transforms.ToPILImage(val)
+        data0_data.append(val_pil)
+        #augmentation
+
+    data0_labels = [[1,0] for x in range(len(data0_data))]
+
+    data1_data = []
+    data1_labels = []
+    for val in data1:
+        val_pil = torchvision.transforms.ToPILImage(val)
+        data1_data.append(val_pil)
+        #augmentation
+
+    
+    data1_labels = [[0,1] for x in range(len(data1_data))]
+
+    return np.array(data0_data + data1_data), np.array(data0_labels + data1_labels)
+
 
 def load_data():
     print("Loading Dataset")
@@ -108,4 +132,16 @@ def load_data():
         if '.jpeg' not in image_path:
             continue
         load_image('data/healthy/', image_path, 0, healthy_data, healthy_labels)
+
+    print("Healthy Data Count: ", len(healthy_data))
+    print("Unhealthy Data Count: ", len(unhealthy_data))
+
+    train_data, train_labels = create_train_data(healthy_data, unhealthy_data, healthy_labels, unhealthy_labels)
+
+    print("Train data Count: ", len(train_data))
+    print("Train label Count: ", len(train_labels))
+
+
+if __name__ == "__main__":
+    load_data()
 
