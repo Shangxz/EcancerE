@@ -50,7 +50,7 @@ class MyDataset(data.Dataset):
 
             if self.scale_factor != -1:
                 target = torch.zeros(3, self.scale_factor, self.scale_factor).type('torch.cuda.FloatTensor')
-                target[:, :100, :48] = images
+                target[:, :224, :224] = images
             else:
                 target = images
             
@@ -61,7 +61,7 @@ class MyDataset(data.Dataset):
 
             if self.scale_factor != -1:
                 target = torch.zeros(3, self.scale_factor, self.scale_factor).type('torch.FloatTensor')
-                target[:, :100, :48] = images
+                target[:, :224, :224] = images
             else:
                 target = images
             
@@ -81,7 +81,7 @@ def demo_test(testloader, raw_data, net, device):
     net.eval()
     with torch.no_grad():
         for data in testloader:
-            images, labels, raw = data
+            images, labels = data
             images = images.to(device)
             labels = labels.to(device)
             print(images.shape)
@@ -117,16 +117,19 @@ def main():
     print("Demo Time!")
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     train_data, train_labels, test_data, test_labels, unknown_data, unknown_labels, raw_unknown_data = load_data()
-    model = models.resnet50(pretrained=False).to(device)
+    model = models.resnet50(pretrained=True).to(device)
 
     num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, 2).to(device)
+    model.fc = nn.Sequential(
+            # nn.Dropout(0.5),
+            nn.Linear(num_ftrs, 2)
+        ).to(device)
 
     #loading the 90% accurate one
     if torch.cuda.is_available():
-        model.load_state_dict(torch.load('checkpoints/90_48100'))
+        model.load_state_dict(torch.load('checkpoints/100'))
     else:
-        model = torch.load('checkpoints/90_48100', map_location='cpu')
+        model = torch.load('checkpoints/100', map_location='cpu')
 
     my_unknown_dataset = MyDataset(unknown_data, unknown_labels, 224, raw_unknown_data)
     unknownloader = torch.utils.data.DataLoader(my_unknown_dataset, batch_size=5,

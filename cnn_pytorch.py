@@ -19,6 +19,8 @@ import matplotlib.pyplot as plt
 
 from load_data import load_data
 
+import data_prep
+
 
 class SimpleCNN (nn.Module):
 
@@ -123,13 +125,13 @@ class MyDataset(data.Dataset):
         
         return target, labels, raw
 
-def train(trainloader, testloader, unknownloader, net, criterion, optimizer, device, num_epoch):
+def train(trainloader, unknownloader, net, criterion, optimizer, device, num_epoch):
     
     for epoch in range(num_epoch):  # loop over the dataset multiple times
         net.train()
         start = time.time()
         running_loss = 0.0
-        for i, (images, labels, _) in enumerate(trainloader):
+        for i, (images, labels) in enumerate(trainloader):
             images = images.to(device)
             # print("images", images)
             labels = labels.to(device)
@@ -149,7 +151,7 @@ def train(trainloader, testloader, unknownloader, net, criterion, optimizer, dev
                 (epoch + 1, running_loss / 100, end-start))
         start = time.time()
         running_loss = 0.0
-        validate(testloader, net, device)
+        # validate(testloader, net, device)
         test(unknownloader, net, device)
 
         
@@ -161,7 +163,7 @@ def validate(testloader, net, device):
     net.eval()
     with torch.no_grad():
         for data in testloader:
-            images, labels, _ = data
+            images, labels = data
             images = images.to(device)
             labels = labels.to(device)
             outputs = net(images)
@@ -181,7 +183,7 @@ def test(testloader, net, device):
     net.eval()
     with torch.no_grad():
         for data in testloader:
-            images, labels, _ = data
+            images, labels = data
             images = images.to(device)
             labels = labels.to(device)
             outputs = net(images)
@@ -203,19 +205,21 @@ def demo_test(testloader, raw_data, net, device):
     # counter = 0
     with torch.no_grad():
         for data in testloader:
-            images, labels, raw = data
+            images, labels = data
             # raw = raw_data[counter]
             # counter += 1
             images = images.to(device)
             labels = labels.to(device)
 
             outputs = net(images)
+            outputs = torch.nn.functional.softmax(outputs, dim=1)
+            print(outputs)
             _, predicted = torch.max(outputs.data, 1)
             # print(raw.shape)
-            print(predicted)
-
-            for index in range(raw.shape[0]):
-                image = cv2.resize(raw[index].numpy(), (0,0), fx=3, fy=3)
+            # print(predicted)
+            for index in range(len(raw_data)):
+                img = raw_data[index].permute(1,2,0)
+                image = cv2.resize(img.numpy(), (0,0), fx=3, fy=3)
                 truth = ''
 
                 if (labels.data.cpu().numpy()[index][0] == 1):
@@ -246,9 +250,9 @@ def main():
     #gpu device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    train_data, train_labels, test_data, test_labels, unknown_data, unknown_labels, raw_unknown_data = load_data()
-    print("# of 1s in train", train_labels.count(1))
-    print("# of 0s in train", train_labels.count(0))
+    # train_data, train_labels, test_data, test_labels, unknown_data, unknown_labels, raw_unknown_data = load_data()
+    # print("# of 1s in train", train_labels.count(1))
+    # print("# of 0s in train", train_labels.count(0))
     # print("# of 1s in test", test_labels.count(1))
     # print("# of 0s in test", test_labels.count(0))
 
@@ -289,7 +293,7 @@ def main():
         num_ftrs = model.fc.in_features
         # model.fc = nn.Linear(num_ftrs, 2).to(device)
         model.fc = nn.Sequential(
-                nn.Dropout(0.1),
+                # nn.Dropout(0.5),
                 nn.Linear(num_ftrs, 2)
             ).to(device)
 
@@ -300,32 +304,26 @@ def main():
         #         params_to_update.append(param)
         #         print("\t",name)
 
-        my_train_dataset = MyDataset(train_data, train_labels, -1)
-        my_test_dataset = MyDataset(test_data, test_labels, -1)
-        my_unknown_dataset = MyDataset(unknown_data, unknown_labels, -1)
+        # my_train_dataset = MyDataset(train_data, train_labels, -1)
+        # my_test_dataset = MyDataset(test_data, test_labels, -1)
+        # my_unknown_dataset = MyDataset(unknown_data, unknown_labels, -1)
 
-        # aug = transforms.Compose([
-        #     transforms.RandomHorizontalFlip(p=1),
-        #     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
-        #     transforms.RandomVerticalFlip(p=1)
-        # ])
-        # my_train_dataset = aug(my_train_dataset)
-
-        unknownloader = torch.utils.data.DataLoader(my_unknown_dataset, batch_size=5,
-                                            shuffle=False)
+        new_train_dataset, new_test_dataset, _ = data_prep.load_data()
 
         criterion = nn.CrossEntropyLoss()
         # optimizer = torch.optim.SGD(params_to_update, lr = 0.003, momentum= 0.9)
         # optimizer = optim.Adam(params_to_update, lr=0.0003)
-        optimizer = optim.Adam(model.parameters(), lr=0.0000001)
+        optimizer = optim.Adam(model.parameters(), lr=0.000003)
 
-        trainloader = torch.utils.data.DataLoader(my_train_dataset, batch_size=batch_size,
+        trainloader = torch.utils.data.DataLoader(new_train_dataset, batch_size=batch_size,
                                               shuffle=True)
-        testloader = torch.utils.data.DataLoader(my_test_dataset, batch_size=batch_size,
-                                              shuffle=False)
-        
+        # testloader = torch.utils.data.DataLoader(new_test_dataset, batch_size=batch_size,
+        #                                       shuffle=False)
+        unknownloader = torch.utils.data.DataLoader(new_test_dataset, batch_size=22,
+                                            shuffle=False)
+
         model.train()
-        train(trainloader, testloader, unknownloader, model, criterion, optimizer, device, num_epoch)
+        train(trainloader, unknownloader, model, criterion, optimizer, device, num_epoch)
         exit()
        
     elif sys.argv[1] == "resnet34":
@@ -359,18 +357,22 @@ def main():
         # model = models.vgg11_bn(pretrained=True).to(device)
 
         num_ftrs = model.fc.in_features
-        model.fc = nn.Linear(num_ftrs, 2).to(device)
+        model.fc = nn.Sequential(
+                # nn.Dropout(0.5),
+                nn.Linear(num_ftrs, 2)
+            ).to(device)
         # num_ftrs = model.classifier[6].in_features
         # model.classifier[6] = nn.Linear(num_ftrs, 2).to(device)
 
         #loading the 99% accurate one
         if torch.cuda.is_available():
-            model.load_state_dict(torch.load('checkpoints/90'))
+            model.load_state_dict(torch.load('checkpoints/100'))
         else:
-            model = torch.load('checkpoints/79', map_location='cpu')
+            model = torch.load('checkpoints/100', map_location='cpu')
 
-        my_unknown_dataset = MyDataset(unknown_data, unknown_labels, 224, raw_unknown_data)
-        unknownloader = torch.utils.data.DataLoader(my_unknown_dataset, batch_size=5,
+        new_train_dataset, new_test_dataset, raw_unknown_data = data_prep.load_data()
+
+        unknownloader = torch.utils.data.DataLoader(new_test_dataset, batch_size=22,
                                             shuffle=False)
         
         # my_raw_unknown_dataset = MyDataset(raw_unknown_data, unknown_labels, 224)
