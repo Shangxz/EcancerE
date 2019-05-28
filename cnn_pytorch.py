@@ -251,7 +251,7 @@ def set_parameter_requires_grad(model, feature_extracting):
             param.requires_grad = False
 
 def main():
-    ## Load Config file
+    ## Load Config file, make sure type of object are correct.
     config:json = {}
     if len(sys.argv) < 2: 
         print("No argv provided, using DEFAULT config profile.")
@@ -292,7 +292,7 @@ def main():
     if config['cnn_type'] == "simple":
         model = SimpleCNN().to(device)
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(model.parameters(), lr=0.003)
+        optimizer = optim.Adam(model.parameters(), lr=config["lr"])
         my_train_dataset = MyDataset(train_data, train_labels, -1)
         my_test_dataset = MyDataset(test_data, test_labels, -1)
     
@@ -354,7 +354,7 @@ def main():
         my_test_dataset = MyDataset(test_data, test_labels, 224)
         criterion = nn.CrossEntropyLoss()
         # optimizer = torch.optim.SGD(model.parameters(), lr = 0.001, momentum= 0.9)
-        optimizer = optim.Adam(model.parameters(), lr=0.001)
+        optimizer = optim.Adam(model.parameters(), lr=config["lr"])
     
     elif config['cnn_type'] == "vgg11":
         model = models.vgg11_bn(pretrained=True).to(device)
@@ -365,7 +365,7 @@ def main():
         my_train_dataset = MyDataset(train_data, train_labels, 224)
         my_test_dataset = MyDataset(test_data, test_labels, 224)
         criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(model.parameters(), lr=0.003)
+        optimizer = optim.Adam(model.parameters(), lr=config["lr"])
 
     elif config['cnn_type'] == "demo":
         print("Demo Time!")
