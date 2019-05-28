@@ -286,8 +286,8 @@ def main():
     # exit()
 
     #default hyperparams
-    num_epoch = 50
-    batch_size = 100
+    num_epoch = config['batch_size']
+    batch_size = config['num_epoch']
 
     if config['cnn_type'] == "simple":
         model = SimpleCNN().to(device)
@@ -297,8 +297,6 @@ def main():
         my_test_dataset = MyDataset(test_data, test_labels, -1)
     
     elif config['cnn_type'] == "resnet18":
-        batch_size = config['batch_size']
-        num_epoch = config['num_epoch']
         model = models.resnet50(pretrained=True).to(device)
         # model = models.resnet50(pretrained=False).to(device)
         # feature extraction, disable to finetune whole model
@@ -359,7 +357,6 @@ def main():
         optimizer = optim.Adam(model.parameters(), lr=0.001)
     
     elif config['cnn_type'] == "vgg11":
-        num_epoch = 1
         model = models.vgg11_bn(pretrained=True).to(device)
         # for param in model.parameters():
         #     param.requires_grad = False
