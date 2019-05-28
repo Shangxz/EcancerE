@@ -254,11 +254,11 @@ def main():
     ## Load Config file
     config:json = {}
     if len(sys.argv) < 2: 
-        print("No argv provided, using DEFAULT.")
+        print("No argv provided, using DEFAULT config profile.")
         with open('./config/default.json') as jsonConfig:  
             config = json.load(jsonConfig)
     else:
-        print("Using ", sys.argv[1] + ".")
+        print("Using ", sys.argv[1] + " config profile.")
         with open('./config/' + sys.argv[1] + '.json') as jsonConfig:  
             config = json.load(jsonConfig)
     
