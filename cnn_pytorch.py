@@ -16,6 +16,7 @@ import cv2
 import matplotlib
 matplotlib.use('tkagg')
 import matplotlib.pyplot as plt
+import os as os
 
 from load_data import load_data
 
@@ -126,7 +127,6 @@ class MyDataset(data.Dataset):
         return target, labels, raw
 
 def train(trainloader, unknownloader, net, criterion, optimizer, device, num_epoch):
-    
     for epoch in range(num_epoch):  # loop over the dataset multiple times
         net.train()
         start = time.time()
@@ -194,7 +194,7 @@ def test(testloader, net, device):
         100 * correct / total))
     #save state_dict
     if (int(100 * correct / total) > 85):
-        torch.save(net.state_dict(), "checkpoints/" + str(int(100 * correct / total)))
+        torch.save(net.state_dict(), "./checkpoints/" + str(int(100 * correct / total)))
     #save entire model
     # torch.save(net, "checkpoints/" + str(100 * correct / total))
 
@@ -249,6 +249,9 @@ def set_parameter_requires_grad(model, feature_extracting):
 def main():
     #gpu device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    if not os.path.exists("./checkpoints"):
+        os.makedirs("./checkpoints")
 
     # train_data, train_labels, test_data, test_labels, unknown_data, unknown_labels, raw_unknown_data = load_data()
     # print("# of 1s in train", train_labels.count(1))
