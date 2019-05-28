@@ -259,7 +259,7 @@ def main():
             config = json.load(jsonConfig)
     else:
         print("Using ", sys.argv[1] + ".")
-        with open('./config' + sys.argv[1] + '.json') as jsonConfig:  
+        with open('./config/' + sys.argv[1] + '.json') as jsonConfig:  
             config = json.load(jsonConfig)
     
     # get cuda device
