@@ -313,13 +313,13 @@ def main():
         criterion = nn.CrossEntropyLoss()
         # optimizer = torch.optim.SGD(params_to_update, lr = 0.003, momentum= 0.9)
         # optimizer = optim.Adam(params_to_update, lr=0.0003)
-        optimizer = optim.Adam(model.parameters(), lr=0.00001)
+        optimizer = optim.Adam(model.parameters(), lr=0.000003)
 
         trainloader = torch.utils.data.DataLoader(new_train_dataset, batch_size=batch_size,
                                               shuffle=True)
         # testloader = torch.utils.data.DataLoader(new_test_dataset, batch_size=batch_size,
         #                                       shuffle=False)
-        unknownloader = torch.utils.data.DataLoader(new_test_dataset, batch_size=5,
+        unknownloader = torch.utils.data.DataLoader(new_test_dataset, batch_size=22,
                                             shuffle=False)
 
         model.train()

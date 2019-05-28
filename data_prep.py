@@ -95,13 +95,13 @@ def create_train_data(data0, data1, label0, label1, device):
     adjusted_mean_tuple = [x/255 for x in mean_tuple]
     adjusted_std_tuple = [x/255 for x in std_tuple]
 
-    adjusted_mean_tuple = [0.5, 0.5, 0.5]
-    adjusted_std_tuple = [0.5, 0.5, 0.5]
+    # adjusted_mean_tuple = [0.5, 0.5, 0.5]
+    # adjusted_std_tuple = [0.5, 0.5, 0.5]
 
     #convert to tensor then normalize
     trans_tensor_normalize = transforms.Compose([transforms.ToTensor(),
-                            transforms.Normalize(mean=mean_tuple, std=std_tuple)])
-    trans_normalize = transforms.Compose([transforms.Normalize(mean=mean_tuple, std=std_tuple)])
+                            transforms.Normalize(mean=adjusted_mean_tuple, std=adjusted_std_tuple)])
+    trans_normalize = transforms.Compose([transforms.Normalize(mean=adjusted_mean_tuple, std=adjusted_std_tuple)])
 
     #healthy data
     data0_data = []
@@ -110,13 +110,13 @@ def create_train_data(data0, data1, label0, label1, device):
         data0_data.append(trans_normalize(val))
         #convert to PIL
         img_pil = torchvision.transforms.functional.to_pil_image(val)
-        #augment
-        # img_pil_transformed = torchvision.transforms.functional.rotate(img_pil, 90)
-        # data0_data.append(trans_tensor_normalize(img_pil_transformed))
+        # augment
+        img_pil_transformed = torchvision.transforms.functional.rotate(img_pil, 90)
+        data0_data.append(trans_tensor_normalize(img_pil_transformed))
         img_pil_transformed = torchvision.transforms.functional.rotate(img_pil, 180)
         data0_data.append(trans_tensor_normalize(img_pil_transformed))
-        # img_pil_transformed = torchvision.transforms.functional.rotate(img_pil, 270)
-        # data0_data.append(trans_tensor_normalize(img_pil_transformed))
+        img_pil_transformed = torchvision.transforms.functional.rotate(img_pil, 270)
+        data0_data.append(trans_tensor_normalize(img_pil_transformed))
     
     print("Healthy Augmented Data Count: ", len(data0_data))
 
@@ -138,25 +138,25 @@ def create_train_data(data0, data1, label0, label1, device):
         data1_data.append(trans_tensor_normalize(img_pil_transformed))
         img_pil_transformed = torchvision.transforms.functional.rotate(img_pil, 270)
         data1_data.append(trans_tensor_normalize(img_pil_transformed))
-        # #changing saturation
-        # img_pil_transformed = torchvision.transforms.functional.adjust_saturation(img_pil, 2)
-        # data1_data.append(trans_tensor_normalize(img_pil_transformed))
+        #changing saturation
+        img_pil_transformed = torchvision.transforms.functional.adjust_saturation(img_pil, 2)
+        data1_data.append(trans_tensor_normalize(img_pil_transformed))
         #change brightness
         img_pil_transformed = torchvision.transforms.functional.adjust_brightness(img_pil, 2)
         data1_data.append(trans_tensor_normalize(img_pil_transformed))
-        # #changing contrast
-        # img_pil_transformed = torchvision.transforms.functional.adjust_contrast(img_pil, 2)
-        # data1_data.append(trans_tensor_normalize(img_pil_transformed))
-        # #adjusting gamma
-        # img_pil_transformed = torchvision.transforms.functional.adjust_gamma(img_pil, 2, gain=1)
-        # data1_data.append(trans_tensor_normalize(img_pil_transformed))
-        # img_pil_transformed = torchvision.transforms.functional.adjust_gamma(img_pil, 0.5, gain=1)
-        # data1_data.append(trans_tensor_normalize(img_pil_transformed))
-        # #adjusting hue, 0.5 complete shift in color scale
-        # img_pil_transformed = torchvision.transforms.functional.adjust_hue(img_pil, 0.5)
-        # data1_data.append(trans_tensor_normalize(img_pil_transformed))
-        # img_pil_transformed = torchvision.transforms.functional.adjust_hue(img_pil, -0.5)
-        # data1_data.append(trans_tensor_normalize(img_pil_transformed))
+        #changing contrast
+        img_pil_transformed = torchvision.transforms.functional.adjust_contrast(img_pil, 2)
+        data1_data.append(trans_tensor_normalize(img_pil_transformed))
+        #adjusting gamma
+        img_pil_transformed = torchvision.transforms.functional.adjust_gamma(img_pil, 2, gain=1)
+        data1_data.append(trans_tensor_normalize(img_pil_transformed))
+        img_pil_transformed = torchvision.transforms.functional.adjust_gamma(img_pil, 0.5, gain=1)
+        data1_data.append(trans_tensor_normalize(img_pil_transformed))
+        #adjusting hue, 0.5 complete shift in color scale
+        img_pil_transformed = torchvision.transforms.functional.adjust_hue(img_pil, 0.5)
+        data1_data.append(trans_tensor_normalize(img_pil_transformed))
+        img_pil_transformed = torchvision.transforms.functional.adjust_hue(img_pil, -0.5)
+        data1_data.append(trans_tensor_normalize(img_pil_transformed))
         
     
     print("UnHealthy Augmented Data Count: ", len(data1_data))
@@ -180,11 +180,11 @@ def create_test_data(data0, label0):
     adjusted_mean_tuple = [x/255 for x in mean_tuple]
     adjusted_std_tuple = [x/255 for x in std_tuple]
 
-    adjusted_mean_tuple = [0.5, 0.5, 0.5]
-    adjusted_std_tuple = [0.5, 0.5, 0.5]
+    # adjusted_mean_tuple = [0.5, 0.5, 0.5]
+    # adjusted_std_tuple = [0.5, 0.5, 0.5]
 
     #convert to tensor then normalize
-    trans_normalize = transforms.Compose([transforms.Normalize(mean=mean_tuple, std=std_tuple)])
+    trans_normalize = transforms.Compose([transforms.Normalize(mean=adjusted_mean_tuple, std=adjusted_std_tuple)])
 
     data = []
     labels = []
