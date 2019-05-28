@@ -17,15 +17,19 @@ import matplotlib
 matplotlib.use('tkagg')
 import matplotlib.pyplot as plt
 import os as os
+import json
 
 from load_data import load_data
 
 import data_prep
 
 
-class SimpleCNN (nn.Module):
+class SimpleCNN(nn.Module):
+
+    config:json = {}
 
     def __init__(self):
+        print("init")
         super(SimpleCNN, self).__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=32, kernel_size=5, padding=1),
@@ -247,9 +251,21 @@ def set_parameter_requires_grad(model, feature_extracting):
             param.requires_grad = False
 
 def main():
-    #gpu device
+    ## Load Config file
+    config:json = {}
+    if len(sys.argv) < 2: 
+        print("No argv provided, using DEFAULT.")
+        with open('./config/default.json') as jsonConfig:  
+            config = json.load(jsonConfig)
+    else:
+        print("Using ", sys.argv[1] + ".")
+        with open('./config' + sys.argv[1] + '.json') as jsonConfig:  
+            config = json.load(jsonConfig)
+    
+    # get cuda device
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+    ## Create checkpoint path
     if not os.path.exists("./checkpoints"):
         os.makedirs("./checkpoints")
 
@@ -273,16 +289,16 @@ def main():
     num_epoch = 50
     batch_size = 100
 
-    if sys.argv[1] == "simple":
+    if config['cnn_type'] == "simple":
         model = SimpleCNN().to(device)
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(model.parameters(), lr=0.003)
         my_train_dataset = MyDataset(train_data, train_labels, -1)
         my_test_dataset = MyDataset(test_data, test_labels, -1)
     
-    elif sys.argv[1] == "resnet18":
-        batch_size = 80
-        num_epoch = 10000
+    elif config['cnn_type'] == "resnet18":
+        batch_size = config['batch_size']
+        num_epoch = config['num_epoch']
         model = models.resnet50(pretrained=True).to(device)
         # model = models.resnet50(pretrained=False).to(device)
         # feature extraction, disable to finetune whole model
@@ -316,7 +332,7 @@ def main():
         criterion = nn.CrossEntropyLoss()
         # optimizer = torch.optim.SGD(params_to_update, lr = 0.003, momentum= 0.9)
         # optimizer = optim.Adam(params_to_update, lr=0.0003)
-        optimizer = optim.Adam(model.parameters(), lr=0.000003)
+        optimizer = optim.Adam(model.parameters(), lr=config["lr"])
 
         trainloader = torch.utils.data.DataLoader(new_train_dataset, batch_size=batch_size,
                                               shuffle=True)
@@ -329,7 +345,7 @@ def main():
         train(trainloader, unknownloader, model, criterion, optimizer, device, num_epoch)
         exit()
        
-    elif sys.argv[1] == "resnet34":
+    elif config['cnn_type'] == "resnet34":
         model = models.resnet34(pretrained=True).to(device)
         #feature extraction
         # for param in model.parameters():
@@ -342,7 +358,7 @@ def main():
         # optimizer = torch.optim.SGD(model.parameters(), lr = 0.001, momentum= 0.9)
         optimizer = optim.Adam(model.parameters(), lr=0.001)
     
-    elif sys.argv[1] == "vgg11":
+    elif config['cnn_type'] == "vgg11":
         num_epoch = 1
         model = models.vgg11_bn(pretrained=True).to(device)
         # for param in model.parameters():
@@ -354,7 +370,7 @@ def main():
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(model.parameters(), lr=0.003)
 
-    elif sys.argv[1] == "demo":
+    elif config['cnn_type'] == "demo":
         print("Demo Time!")
         model = models.resnet50(pretrained=False).to(device)
         # model = models.vgg11_bn(pretrained=True).to(device)
