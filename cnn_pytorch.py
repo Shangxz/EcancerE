@@ -23,113 +23,6 @@ from load_data import load_data
 
 import data_prep
 
-
-class SimpleCNN(nn.Module):
-
-    config:json = {}
-
-    def __init__(self):
-        print("init")
-        super(SimpleCNN, self).__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=32, kernel_size=5, padding=1),
-            nn.MaxPool2d(2, 2),
-            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=5, padding=1),
-            nn.MaxPool2d(2, 2)
-        )
-
-        self.fc = nn.Linear(14720, 1024)
-        self.fc1 = nn.Linear(1024, 512)
-        self.fc2 = nn.Linear(512, 2)
-
-        self.dropout = nn.Dropout(p=0.5)
-    
-    def forward(self, x):
-        x = F.relu(self.conv(x))
-        x = x.view(x.size(0), -1)
-        x = F.relu(self.fc(x))
-        x = F.relu(self.fc1(x))
-        x = self.dropout(x)
-        x = F.relu(self.fc2(x))
-        return x
-
-class MyDataset(data.Dataset):
-    def __init__(self, x, y, scale_factor, raw_data=[]):
-        'Initialization'
-        self.x = x
-        temp_lis = []
-        for val in y:
-            if val == 1:
-                temp_lis.append([0,1])
-            else:
-                temp_lis.append([1,0])
-        one_labels = np.array(temp_lis)
-        self.y = one_labels
-        self.scale_factor = scale_factor
-        self.raw_data = raw_data
-    
-    def __len__(self):
-        'Denotes the total number of samples'
-        return len(self.x)
-    
-    def __getitem__(self, index):
-        'Generates one sample of data'
-        # Load data and get label
-        if torch.cuda.is_available():
-            # print(self.x[index])
-            # images = torch.from_numpy(np.ascontiguousarray(self.x[index])).type('torch.cuda.FloatTensor')
-            # cv2.namedWindow('original_numpy', cv2.WINDOW_NORMAL)
-            # cv2.imshow('original_numpy', self.x[index])
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
-            # images = torch.from_numpy(np.flip(self.x[index], axis=0).copy()).type('torch.cuda.FloatTensor')
-            # images = np.ascontiguousarray(self.x[index].transpose(2,0,1)[np.newaxis, :])
-            images = torch.from_numpy(self.x[index]).type('torch.cuda.FloatTensor')
-            # cv2.namedWindow('original', cv2.WINDOW_NORMAL)
-            # cv2.imshow('original', images.cpu().numpy())
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
-            # plt.imshow(images.cpu().numpy()/255)
-            # plt.show()
-            # print(images.shape)
-            # images = images.squeeze()
-            # print(images.shape)
-            # exit()
-            images = images.permute(2,1,0)
-
-            if self.scale_factor != -1:
-                target = torch.zeros(3, self.scale_factor, self.scale_factor).type('torch.cuda.FloatTensor')
-                target[:, :100, :48] = images
-            else:
-                target = images
-            
-            labels = torch.from_numpy(self.y[index]).type('torch.cuda.LongTensor')
-        else:
-            images = torch.from_numpy(self.x[index]).type('torch.FloatTensor')
-            images = images.permute(2,1,0)
-
-            if self.scale_factor != -1:
-                target = torch.zeros(3, self.scale_factor, self.scale_factor).type('torch.FloatTensor')
-                target[:, :100, :48] = images
-            else:
-                target = images
-            
-            labels = torch.from_numpy(self.y[index]).type('torch.LongTensor')
-
-        # print(target.shape)
-        # temp = target.permute(2,1,0)
-        # cv2.namedWindow('target', cv2.WINDOW_NORMAL)
-        # cv2.imshow('target', temp.cpu().numpy())
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
-        
-        if self.raw_data != []:
-            raw = self.raw_data[index]
-        else:
-            raw = []
-        
-        return target, labels, raw
-
 def train(trainloader, unknownloader, net, criterion, optimizer, device, num_epoch):
     for epoch in range(num_epoch):  # loop over the dataset multiple times
         net.train()
@@ -176,10 +69,6 @@ def validate(testloader, net, device):
             correct += (predicted == torch.max(labels, 1)[1]).sum().item()
     print('Accuracy of the network on the test images: %d %%' % (
         100 * correct / total))
-    #save state_dict
-    # torch.save(net.state_dict(), "checkpoints/" + str(int(100 * correct / total)))
-    #save entire model
-    # torch.save(net, "checkpoints/" + str(100 * correct / total))
 
 def test(testloader, net, device):
     correct = 0
@@ -210,8 +99,6 @@ def demo_test(testloader, raw_data, net, device):
     with torch.no_grad():
         for data in testloader:
             images, labels = data
-            # raw = raw_data[counter]
-            # counter += 1
             images = images.to(device)
             labels = labels.to(device)
 
@@ -219,8 +106,7 @@ def demo_test(testloader, raw_data, net, device):
             outputs = torch.nn.functional.softmax(outputs, dim=1)
             print(outputs)
             _, predicted = torch.max(outputs.data, 1)
-            # print(raw.shape)
-            # print(predicted)
+
             for index in range(len(raw_data)):
                 img = raw_data[index].permute(1,2,0)
                 image = cv2.resize(img.numpy(), (0,0), fx=3, fy=3)
@@ -238,9 +124,6 @@ def demo_test(testloader, raw_data, net, device):
 
             total += labels.size(0)
             correct += (predicted == torch.max(labels, 1)[1]).sum().item()
-            # print(outputs)
-            # print(labels)
-            
 
     print('Accuracy of the network on the test images: %d %%' % (
         100 * correct / total))
@@ -269,34 +152,11 @@ def main():
     if not os.path.exists("./checkpoints"):
         os.makedirs("./checkpoints")
 
-    # train_data, train_labels, test_data, test_labels, unknown_data, unknown_labels, raw_unknown_data = load_data()
-    # print("# of 1s in train", train_labels.count(1))
-    # print("# of 0s in train", train_labels.count(0))
-    # print("# of 1s in test", test_labels.count(1))
-    # print("# of 0s in test", test_labels.count(0))
-
-    # for image in train_data:
-    #     cv2.namedWindow('target', cv2.WINDOW_NORMAL)
-    #     cv2.imshow('target', image)
-    #     cv2.waitKey(0)
-    #     cv2.destroyAllWindows()
-
-    # cv2.imshow('d', data[0])
-    # cv2.waitKey(0)
-    # exit()
-
     #default hyperparams
     num_epoch = config['batch_size']
     batch_size = config['num_epoch']
 
-    if config['cnn_type'] == "simple":
-        model = SimpleCNN().to(device)
-        criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(model.parameters(), lr=config["lr"])
-        my_train_dataset = MyDataset(train_data, train_labels, -1)
-        my_test_dataset = MyDataset(test_data, test_labels, -1)
-    
-    elif config['cnn_type'] == "resnet18":
+    if config['cnn_type'] == "resnet50":
         model = models.resnet50(pretrained=True).to(device)
         # model = models.resnet50(pretrained=False).to(device)
         # feature extraction, disable to finetune whole model
@@ -308,7 +168,7 @@ def main():
             # print(name)
 
         num_ftrs = model.fc.in_features
-        # model.fc = nn.Linear(num_ftrs, 2).to(device)
+
         model.fc = nn.Sequential(
                 # nn.Dropout(0.5),
                 nn.Linear(num_ftrs, 2)
@@ -321,51 +181,21 @@ def main():
         #         params_to_update.append(param)
         #         print("\t",name)
 
-        # my_train_dataset = MyDataset(train_data, train_labels, -1)
-        # my_test_dataset = MyDataset(test_data, test_labels, -1)
-        # my_unknown_dataset = MyDataset(unknown_data, unknown_labels, -1)
-
         new_train_dataset, new_test_dataset, _ = data_prep.load_data()
 
         criterion = nn.CrossEntropyLoss()
-        # optimizer = torch.optim.SGD(params_to_update, lr = 0.003, momentum= 0.9)
-        # optimizer = optim.Adam(params_to_update, lr=0.0003)
+
         optimizer = optim.Adam(model.parameters(), lr=config["lr"])
 
-        trainloader = torch.utils.data.DataLoader(new_train_dataset, batch_size=batch_size,
+        trainloader = torch.utils.data.DataLoader(new_train_dataset, batch_size=config['batch_size'],
                                               shuffle=True)
-        # testloader = torch.utils.data.DataLoader(new_test_dataset, batch_size=batch_size,
-        #                                       shuffle=False)
+
         unknownloader = torch.utils.data.DataLoader(new_test_dataset, batch_size=22,
                                             shuffle=False)
 
         model.train()
-        train(trainloader, unknownloader, model, criterion, optimizer, device, num_epoch)
+        train(trainloader, unknownloader, model, criterion, optimizer, device, config['num_epoch'])
         exit()
-       
-    elif config['cnn_type'] == "resnet34":
-        model = models.resnet34(pretrained=True).to(device)
-        #feature extraction
-        # for param in model.parameters():
-        #     param.requires_grad = False
-        num_ftrs = model.fc.in_features
-        model.fc = nn.Linear(num_ftrs, 2).to(device)
-        my_train_dataset = MyDataset(train_data, train_labels, 224)
-        my_test_dataset = MyDataset(test_data, test_labels, 224)
-        criterion = nn.CrossEntropyLoss()
-        # optimizer = torch.optim.SGD(model.parameters(), lr = 0.001, momentum= 0.9)
-        optimizer = optim.Adam(model.parameters(), lr=config["lr"])
-    
-    elif config['cnn_type'] == "vgg11":
-        model = models.vgg11_bn(pretrained=True).to(device)
-        # for param in model.parameters():
-        #     param.requires_grad = False
-        num_ftrs = model.classifier[6].in_features
-        model.classifier[6] = nn.Linear(num_ftrs, 2).to(device)
-        my_train_dataset = MyDataset(train_data, train_labels, 224)
-        my_test_dataset = MyDataset(test_data, test_labels, 224)
-        criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(model.parameters(), lr=config["lr"])
 
     elif config['cnn_type'] == "demo":
         print("Demo Time!")
@@ -401,26 +231,6 @@ def main():
     else:
         print("No Model Provided!")
         exit()
-    
-    # criterion = nn.CrossEntropyLoss()
-    # criterion = nn.BCELoss()
-    # criterion = nn.BCEWithLogitsLoss()
-    # criterion = nn.NLLLoss()
-
-    # optimizer = optim.Adam(model.parameters(), lr=0.003)
-    # optimizer = torch.optim.SGD(model.parameters(), lr = 0.003, momentum= 0.9)
-
-    trainloader = torch.utils.data.DataLoader(my_train_dataset, batch_size=batch_size,
-                                              shuffle=True)
-    testloader = torch.utils.data.DataLoader(my_test_dataset, batch_size=batch_size,
-                                              shuffle=False)
-
-    model.train()
-    train(trainloader, testloader, unknownloader, model, criterion, optimizer, device, num_epoch)
-
-    # model.eval()
-    # test(testloader, model, device)
-
 
 if __name__ == "__main__":
     main()
